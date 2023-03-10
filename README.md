@@ -17,4 +17,4 @@ Just a test:
 print("Hello")
 ```
 
-    2
+    Hello
