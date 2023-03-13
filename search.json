@@ -1,0 +1,30 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "CARL",
+    "section": "",
+    "text": "pip install CARL"
+  },
+  {
+    "objectID": "index.html#how-to-use",
+    "href": "index.html#how-to-use",
+    "title": "CARL",
+    "section": "How to use",
+    "text": "How to use\nJust a test:\n\nprint(\"Hello\")\n\nHello"
+  },
+  {
+    "objectID": "agents/simpleconf.html",
+    "href": "agents/simpleconf.html",
+    "title": "SimpleConf",
+    "section": "",
+    "text": "source\n\nSimpleConf\n\n SimpleConf (params)\n\nInitialize self. See help(type(self)) for accurate signature."
+  },
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "core",
+    "section": "",
+    "text": "source\n\nfoo\n\n foo ()"
+  }
+]
