@@ -9,83 +9,51 @@ import networkx as nx
 
 # %% ../../nbs/agents/00_SimpleConf.ipynb 5
 class SimpleConf(object):
+    """
+    Class for simple reinforcement learning (Rescorla-Wagner rule)
+    with confirmation/disconfirmation bias.
+    """
 
-    def __init__(self, params):
-        self.N = np.shape(params)[0]   # number of agents
+    def __init__(self, 
+                 params: np.ndarray):  # agents' parameters
+        
+        self.N = np.shape(params)[0]  # number of agents
         self.M = 2  # number of options
         self.alphac = params[:, 0]   # confirmatory learning rates
         self.alphad = params[:, 1]   # disconfirmatory learning rates
         self.beta = params[:, 2]    # inverse temperatures
 
     def connect_agents_full(self):
-        # all agents have full attention capacity
+        """Connects agents according to a fully connected graph."""
         return nx.complete_graph(self.N)
 
     def compute_softmax(self, Qtable):
-        # returns a probability table for all agents for all actions
+        """Returns a probability table for all agents for all actions,
+        from agents' Qtable."""
         beta = np.row_stack(self.beta)
         num = np.exp(beta*Qtable)  # numerator
         den = np.sum(num, axis=1)  # denominator
         return num/den[:, None]
 
     def choose(self, Ptable):
-        # computes chosen options from probability table
+        """Computes chosen options from agents's probability table."""
         choices = np.zeros((np.shape(Ptable)[0]))  # 1 choice per agent
         rd = np.reshape(np.random.rand(len(choices)), (len(choices), 1))
         choices = np.sum(rd > np.cumsum(Ptable, axis=1), axis=1)
         choices = choices.astype(int)  # converts the choices to int values
         return choices
-
-    def track_payoffs(self, agent, G_att, choices, payoffs):
-        # tracks the choices and payoffs of oneself + neighbors
-        obs_choices = [choices[agent]] + [
-            choices[n] for n in list(G_att.neighbors(agent))]
-        # observed choices
-        obs_choices = list(dict.fromkeys(obs_choices))  # removes duplicates
-        obs_payoffs = [payoffs[obs] for obs in obs_choices]  # lists
-        # corresponding payoffs
-        trackmat = np.column_stack((obs_choices, obs_payoffs))  # matches
-        # tracked choices + payoffs in a matrix
-        return trackmat
-
-    def update_Qvalues_async(self, agent, G_att, choices, payoffs, Qtable):
-        c = max(choices)
-        delta_mat = np.zeros((self.N, c+1))
-        delta_mat[agent, choices[agent]] = payoffs[agent] - Qtable[agent, choices[agent]]
-        M = list(G_att.neighbors(agent))
-        delta_mat[M, choices[M]] = payoffs[M] - Qtable[agent, choices[M]]
-        j = choices[agent]
-        delta_mat[:, j][delta_mat[:, j] > 0] *= self.alphac[agent]
-        delta_mat[:, j][delta_mat[:, j] <= 0] *= self.alphad[agent]
-        I = list(np.arange(0, c+1, 1))
-        I.remove(j)
-        delta_mat[:, I][delta_mat[:, I] > 0] *= self.alphad[agent]
-        delta_mat[:, I][delta_mat[:, I] <= 0] *= self.alphac[agent]
-        inc = np.sum(delta_mat, axis=0)
-        Qtable[agent, :c+1] += inc
-        return Qtable
-
-    def update_Qvalues(self, agent, trackmat, Qtable):
-        # updates Q-values according to a simple RW rule + asymmetric updating
-        trackmat_int = trackmat.astype(int)  # used for indexing
-        delta = trackmat[:, 1] - Qtable[agent, trackmat_int[:, 0]]  # all
-        # prediction errors
-        alpha = trackmat[:, 1] - Qtable[agent, trackmat_int[:, 0]]  # building
-        # alpha from prediction errors
-        alpha[alpha > 0] = self.alphad[agent]  # delta will be updated with
-        # alphad if positive
-        alpha[alpha <= 0] = self.alphac[agent]  # and with alphac if negative
-        # this is reversed when choice is own choice
-        if delta[0] >= 0:
-            alpha[0] = self.alphac[agent]
-        else:
-            alpha[0] = self.alphad[agent]
-        Qtable[agent, trackmat_int[:, 0]] += alpha * delta  # updates all
-        # Q-values
-        return Qtable
     
-    # Allows to update Q-values for all agents without for loops
-    def update_Qvalues_async2(self, G_att, choices, payoffs, Qtable): 
+    def all_take_action(self, Qtable):
+        """Computes all agents' choices from their Qtable.
+        Combines `compute_softmax` and `choose`.
+        """
+        Ptable = self.compute_softmax(Qtable)
+        choices = self.choose(Ptable)
+        return choices
+    
+    def update_Qvalues(self, G_att, choices, payoffs, Qtable): 
+        """Updates all agents' Q-values according to CARL, 
+        without for loops."""
         Qs = np.einsum('ijk->ikj', np.reshape(np.repeat(Qtable, self.N), 
                                               (self.N, self.M, self.N)))
         Rs = np.einsum('ijk->kij', np.reshape(np.repeat(np.repeat(payoffs, 
@@ -132,25 +100,4 @@ class SimpleConf(object):
         deltas *= alphas
         deltas_sum = np.sum(deltas, axis=1)
         Qtable += deltas_sum
-        return Qtable
-
-
-    def all_take_action(self, Qtable):
-        # all agents choose an option according to their Q-tables
-        Ptable = self.compute_softmax(Qtable)
-        choices = self.choose(Ptable)
-        return choices
-
-    def all_update_Q(self, Qtable, G_att, payoffs, choices):
-        # all agents update their Q-values
-        for agent in range(self.N):
-            trackmat = self.track_payoffs(agent, G_att, choices, payoffs)
-            Qtable = self.update_Qvalues(agent, trackmat, Qtable)
-        return Qtable
-
-    def all_update_Q_async(self, Qtable, G_att, payoffs, choices):
-        # all agents update their Q-values
-        for agent in range(self.N):
-            Qtable = self.update_Qvalues_async(agent, G_att, choices, payoffs,
-            Qtable)
         return Qtable
