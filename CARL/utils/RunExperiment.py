@@ -4,12 +4,16 @@
 __all__ = ['RunExperiment']
 
 # %% ../../nbs/utils/20_RunExperiment.ipynb 4
+# Go to main directory to import modules
+import os
+os.chdir('../../CARL')
+
 import numpy as np
 import pandas as pd
 from datetime import datetime
 
-# from envs.TwoArmedBandit import TwoArmedBandit
-# from agents.SimpleConf import SimpleConf
+from ..envs.TwoArmedBandit import TwoArmedBandit
+from ..agents.SimpleConf import SimpleConf
 
 # %% ../../nbs/utils/20_RunExperiment.ipynb 5
 class RunExperiment(object):
@@ -67,7 +71,7 @@ class RunExperiment(object):
         lenb = len(self.bias_strength)
         lent = len(self.task_name)
         
-        for a in range(lenb):  # loop on bias types
+        for k, a in enumerate(self.bias_strength):  # loop on bias types
         
             for i, n in enumerate(self.n_agents):
                 # Make df to store rewards, choices, Q-values at each trial
@@ -96,7 +100,7 @@ class RunExperiment(object):
                     Q0_idx = int(2 * lent + s)
                     Q1_idx = int(3 * lent + s)
             
-                    pars_agent = np.array([self.alphaC[a]/n, self.alphaD[a]/n, self.beta])  # params:
+                    pars_agent = np.array([self.alphaC[k]/n, self.alphaD[k]/n, self.beta])  # params:
                     # confirmatory learning rate, disconfirmatory learning rate (both
                     # scaled by 1/n), inv temperature
                     pars_simu = np.row_stack((pars_agent,) * n)  # all the agents in the
@@ -119,14 +123,45 @@ class RunExperiment(object):
                             # Qtables are updated according to Social RL model
                     
                     # Print statement that simulation is finished with simulation duration
-                    print("Group "+str(n)+", bias strength "+self.bias_strength[a]+", task "
-                          +self.task_name[s]+" finished, time="+str(datetime.now()-start))
+                    print("Group "+str(n)+", bias strength "+self.bias_strength[k]+", "
+                          +self.task_name[s]+" environment done, time="+str(datetime.now()-start))
                 
                 # Make data df
                 data_df = pd.DataFrame(data, index=index_row, columns=index_col)
                 group = '/groupsize'+str(n)
-                key = '/bs'+self.bias_strength[a]
+                key = '/bs'+self.bias_strength[k]
                 # Save data to hdf5 file
-                data_df.to_hdf(self.path+"data_expe4_"+self.version+".h5", group+key, mode='a')
+                data_df.to_hdf(self.path+"data_exp_"+self.version+".h5", group+key, mode='a')
                 
         return data_df
+
+    def GetMeansAndStds(self):
+        """Extracts means and standard deviations from the data and puts them into a numpy array."""
+        # Arrays that will store means and stds
+        meanR_array = np.zeros((len(self.task_name), len(self.bias_strength), len(self.n_agents)))
+        stdR_array = np.zeros((len(self.task_name), len(self.bias_strength), len(self.n_agents)))
+        for i, n in enumerate(self.n_agents):
+            # Extract data from the file
+            filename = self.path+"data_exp_"+self.version+".h5"
+            group = '/groupsize'+str(n)
+            for k, b in enumerate(self.bias_strength):
+                key = '/bs'+self.bias_strength[k]
+                # Turn into dataframe
+                data = pd.read_hdf(filename, group+key)
+                idx = pd.IndexSlice
+                # Extract reward data
+                data_R = data.loc[:, ['R']]
+                meanRa = data_R.groupby(["simus", "trials"]).mean()  # average over all agents
+                meanRt = meanRa.groupby(["simus"]).mean()  # average over trials
+                meanR = meanRt.mean()  # average over simulations
+                stdR = meanRt.std() # compute std
+                # Sort indices
+                meanR = meanR.sort_index()
+                stdR = stdR.sort_index()
+                self.task_name.sort()
+                # Loop on envs
+                for j, name in enumerate(self.task_name):
+                    # Put into array
+                    meanR_array[j, k, i] = meanR.loc['R', name]
+                    stdR_array[j, k, i] = stdR.loc['R', name]
+        return meanR_array, stdR_array
