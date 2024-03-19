@@ -15,6 +15,7 @@ Enter CARL folder:
 
 ``` sh
 cd CARL
+```
 
 Install locally:
 
