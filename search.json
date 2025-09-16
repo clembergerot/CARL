@@ -1,0 +1,163 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "CARL",
+    "section": "",
+    "text": "Clone repository:\ngit clone https://github.com/clembergerot/CARL.git\nEnter CARL folder:\ncd CARL\nInstall locally:\npip install .",
+    "crumbs": [
+      "CARL"
+    ]
+  },
+  {
+    "objectID": "index.html#install",
+    "href": "index.html#install",
+    "title": "CARL",
+    "section": "",
+    "text": "Clone repository:\ngit clone https://github.com/clembergerot/CARL.git\nEnter CARL folder:\ncd CARL\nInstall locally:\npip install .",
+    "crumbs": [
+      "CARL"
+    ]
+  },
+  {
+    "objectID": "index.html#how-to-use",
+    "href": "index.html#how-to-use",
+    "title": "CARL",
+    "section": "How to use",
+    "text": "How to use\nAn example:\n\nimport numpy as np\nimport matplotlib.pyplot as plt\n\nfrom CARL.envs.TwoArmedBandit import TwoArmedBandit\nfrom CARL.agents.SimpleConf import SimpleConf\n\n# Define parameters\nalphaC = 0.3  # confirmatory learning rate\nalphaD = 0.1  # disconfirmatory learning rate\nbeta = 4.  # inverse temperature\np0 = 0.6  # reward probability arm 1\np1 = 0.4  # reward probability arm 2\nrew = 1  # reward value\npun = -1  # punishment value\nn_agents = 2 # number of agents in the group\nn_trials = 1000  # number of trials\n\n# Run a simulation with 2 confirmatory agents\npars_agent = np.array([alphaC/n_agents, alphaD/n_agents, beta])  \npars_simu = np.row_stack((pars_agent,) * n_agents) \nagents = SimpleConf(pars_simu)\ntask = TwoArmedBandit(p0, p1, rew, pun)  # define 2-armed bandit task\nG = agents.connect_agents_full()  # agents are fully connected\nQtable = np.zeros((n_agents, 2))  # initialize Q-table\nQ = np.zeros((n_trials, n_agents, 2))\nfor t in range(1, n_trials):\n    choices = agents.all_take_action(Qtable)\n    payoffs = task.return_payoffs(choices)\n    Qtable = agents.update_Qvalues(G, choices, payoffs, Qtable)\n    Q[t] = Qtable\n\n# Plot both agents' Q-value gaps over time\nplt.figure()\nplt.plot(np.arange(1, n_trials+1), Q[:, 0, 0] - Q[:, 0, 1], label=\"agent 1\")\nplt.plot(np.arange(1, n_trials+1), Q[:, 1, 0] - Q[:, 1, 1], label=\"agent 2\")\nplt.xlabel(\"trial\")\nplt.ylabel(r'$Q_1 - Q_0$')\nplt.title(\"Confirmatory agents' Q-value gaps over time\")\nplt.legend()\nplt.show()",
+    "crumbs": [
+      "CARL"
+    ]
+  },
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "core",
+    "section": "",
+    "text": "source\n\nfoo\n\n foo ()",
+    "crumbs": [
+      "core"
+    ]
+  },
+  {
+    "objectID": "envs/randomwalktab.html",
+    "href": "envs/randomwalktab.html",
+    "title": "RandomWalkTAB",
+    "section": "",
+    "text": "# import for testing\nimport matplotlib.pyplot as plt\nsource",
+    "crumbs": [
+      "envs",
+      "RandomWalkTAB"
+    ]
+  },
+  {
+    "objectID": "envs/randomwalktab.html#test",
+    "href": "envs/randomwalktab.html#test",
+    "title": "RandomWalkTAB",
+    "section": "Test",
+    "text": "Test\n\nkappa = 0.01 \nsigma = 0.05\nrew = 1\npun = -1\n\ntest = RandomWalkTAB(kappa, sigma, rew, pun)\n\n\n# Initial random probs\ntest.output_probs()\n\narray([0.550999  , 0.26893365])\n\n\n\n# Store probs over trials\nn_trials = 100\nprobs_rw = np.zeros((2, n_trials))\nprobs_rw[:, 0] = test.output_probs()\n\n\n# Run trials with random choice\nfor t in range(1, n_trials):\n    choices = np.random.randint(2, size=1)\n    payoffs = test.return_payoffs(choices)\n    probs_rw[:, t] = test.output_probs()\n\n\n# Plot the random walk\n\nplt.plot(probs_rw[0, :], label=\"rew prob arm 0\")\nplt.plot(probs_rw[1, :], label=\"rew prob arm 1\")\nplt.legend()",
+    "crumbs": [
+      "envs",
+      "RandomWalkTAB"
+    ]
+  },
+  {
+    "objectID": "utils/runexperiment.html",
+    "href": "utils/runexperiment.html",
+    "title": "RunExperiment",
+    "section": "",
+    "text": "source",
+    "crumbs": [
+      "utils",
+      "RunExperiment"
+    ]
+  },
+  {
+    "objectID": "utils/runexperiment.html#example-experiment",
+    "href": "utils/runexperiment.html#example-experiment",
+    "title": "RunExperiment",
+    "section": "Example experiment",
+    "text": "Example experiment\nAs an example, we investigate the impact of group size and bias type (and the interaction of both) on performance in a rich environment. To do so, we consider the following conditions:\n\ngroup size: we consider groups of \\(2\\) and \\(5\\) agents\nbias type: in the confirmation condition, every agent’s learning rates are \\(\\alpha_C = 0.15\\), and \\(\\alpha_D = 0.05\\); in the disconfirmation condition, the learning rates are \\(\\alpha_C = 0.05\\), and \\(\\alpha_D = 0.15\\).\nenvironment: in a rich environment, the arms’ rewards probabilities are \\(p_0 = 0.9\\), and \\(p_1 = 0.7\\).\n\nTo quantify performance, we measure mean reward per agent per trial over simulations.\n\n# Define experiment\n\nparams = {}\np0 = [0.9]\np1 = [0.7]\nrew = 1.\npun = -1\nn_trials = 100\nn_simu = 500\nalphaD = [0.05, 0.15]\nalphaC = [0.15, 0.05]\nbeta = 4.\nn_agents = np.array([2, 5])\nbias_strength = [\"conf\", \"disc\"]\ntask_name = [\"rich\"]\npath = \"example_data/\"\nversion = \"v0.0\"\n\nparams['p0'] = p0\nparams['p1'] = p1\nparams['rew'] = rew\nparams['pun'] = pun\nparams['n_trials'] = n_trials\nparams['n_simu'] = n_simu\nparams['alphaD'] = alphaD\nparams['alphaC'] = alphaC\nparams['beta'] = beta\nparams['n_agents'] = n_agents\nparams['task_name'] = task_name\nparams['bias_strength'] = bias_strength\n\nexample = RunExperiment(params, path, version)",
+    "crumbs": [
+      "utils",
+      "RunExperiment"
+    ]
+  },
+  {
+    "objectID": "utils/runexperiment.html#runexperiment-methods",
+    "href": "utils/runexperiment.html#runexperiment-methods",
+    "title": "RunExperiment",
+    "section": "RunExperiment methods",
+    "text": "RunExperiment methods\n\nsource\n\nRunExperiment.SaveParams\n\n RunExperiment.SaveParams ()\n\nSaves simulation parameters and outputs params dataframe.\nInput:\n\nnone\n\nOutput:\n\na pandas dataframe of the experiment’s params\n\n\nExample\n\nexample.SaveParams()\n\n\n\n\n\n\n\n\n\n\nalpha_C\nalpha_D\nbeta\np0\np1\nn_simu\nn_trials\n\n\nscarcity\ngroup_size\nbias_strength\n\n\n\n\n\n\n\n\n\n\n\nrich\n2\nconf\n0.15\n0.05\n4.0\n0.9\n0.7\n500.0\n100.0\n\n\ndisc\n0.05\n0.15\n4.0\n0.9\n0.7\n500.0\n100.0\n\n\n5\nconf\n0.15\n0.05\n4.0\n0.9\n0.7\n500.0\n100.0\n\n\ndisc\n0.05\n0.15\n4.0\n0.9\n0.7\n500.0\n100.0\n\n\n\n\n\n\n\n\nsource\n\n\n\nRunExperiment.RunAndSave\n\n RunExperiment.RunAndSave ()\n\nRuns experiment according to params and saves results.\nInput:\n\nnone\n\nOutput:\n\na pandas dataframe of the experiment’s results\n\n\nExample\n\nexample.RunAndSave()\n\nGroup 2, bias strength conf, rich environment done, time=0:00:21.043471\nGroup 5, bias strength conf, rich environment done, time=0:00:22.824010\nGroup 2, bias strength disc, rich environment done, time=0:00:19.947783\nGroup 5, bias strength disc, rich environment done, time=0:00:21.326244\n\n\n\n\n\n\n\n\n\n\nvariables\nR\nC\nQ0\nQ1\n\n\n\n\nscarcity\nrich\nrich\nrich\nrich\n\n\nsimus\ntrials\nagent\n\n\n\n\n\n\n\n\n0\n0\n0\n1.0\n0.0\n0.010000\n8.000000e-02\n\n\n1\n1.0\n1.0\n0.030000\n1.734723e-18\n\n\n2\n1.0\n1.0\n0.030000\n1.734723e-18\n\n\n3\n-1.0\n1.0\n0.030000\n1.734723e-18\n\n\n4\n1.0\n1.0\n0.030000\n1.734723e-18\n\n\n...\n...\n...\n...\n...\n...\n...\n\n\n499\n99\n0\n1.0\n1.0\n0.635815\n4.627175e-01\n\n\n1\n1.0\n0.0\n0.592761\n4.571933e-01\n\n\n2\n1.0\n1.0\n0.644681\n4.522347e-01\n\n\n3\n-1.0\n1.0\n0.577909\n5.228634e-01\n\n\n4\n1.0\n0.0\n0.686065\n4.928230e-01\n\n\n\n\n250000 rows × 4 columns\n\n\n\n\nsource\n\n\n\nRunExperiment.GetMeansAndStds\n\n RunExperiment.GetMeansAndStds ()\n\nExtracts means and standard deviations from the data and puts them into a numpy array.\nInput:\n\nnone\n\nOutput:\n\nmeanR_array: numpy array containing mean collected rewards over simulations, per agent per trial\nstdR_array: numpy array containing standard deviation of collected rewards over simulations, per agent per trial\n\n\nExample\n\nmeanR_array, stdR_array = example.GetMeansAndStds()\n\n\n# Plot results\n\nCI_array = 1.96 * stdR_array / np.sqrt(n_simu)  # confidence intervals\n\nplt.figure(figsize=(4, 4))\nplt.errorbar(n_agents, meanR_array[0, 0, :], yerr=CI_array[0, 0, :], label=bias_strength[0])\nplt.errorbar(n_agents, meanR_array[0, 1, :], yerr=CI_array[0, 1, :], label=bias_strength[1])\nplt.xlabel(\"group size\")\nplt.ylabel(\"mean collected reward per agent per trial\")\nplt.xticks([2, 5])\nplt.legend(bbox_to_anchor=(1.01, 1))\nplt.title(\"Performance in a rich environment\")\nplt.show()",
+    "crumbs": [
+      "utils",
+      "RunExperiment"
+    ]
+  },
+  {
+    "objectID": "envs/twoarmedbandit.html",
+    "href": "envs/twoarmedbandit.html",
+    "title": "TwoArmedBandit",
+    "section": "",
+    "text": "source",
+    "crumbs": [
+      "envs",
+      "TwoArmedBandit"
+    ]
+  },
+  {
+    "objectID": "envs/twoarmedbandit.html#example-environment",
+    "href": "envs/twoarmedbandit.html#example-environment",
+    "title": "TwoArmedBandit",
+    "section": "Example environment",
+    "text": "Example environment\nWe define a two-armed bandit task with the following reward probabilities: \\(0.9\\) for the first arm, and \\(0.7\\) for the second arm. This means that e.g. the first arm has a probability \\(0.9\\) of returning a reward, that we set to \\(+1\\), and a probability \\(1 - 0.9 = 0.1\\) of returning a penalty, that we set to \\(-1\\).\n\n# Define example environment\np_0 = 0.9\np_1 = 0.7\nrew = 1\npun = -1\n\nexample = TwoArmedBandit(p_0, p_1, rew, pun)",
+    "crumbs": [
+      "envs",
+      "TwoArmedBandit"
+    ]
+  },
+  {
+    "objectID": "envs/twoarmedbandit.html#twoarmedbandit-methods",
+    "href": "envs/twoarmedbandit.html#twoarmedbandit-methods",
+    "title": "TwoArmedBandit",
+    "section": "TwoArmedBandit methods",
+    "text": "TwoArmedBandit methods\n\nsource\n\nTwoArmedBandit.return_payoffs\n\n TwoArmedBandit.return_payoffs (choices)\n\nReturns reward with probability p and punishment with probability (1-p).\nInput:\n\nagents’ choices (array)\n\nOutput:\n\nan array containing the payoffs that result from agents’ choices\n\n\nExample\n\n# Define random choices (example with two agents)\nchoices = np.random.randint(0, 2, 2)\nprint(\"Choices:\", choices)\nexample.return_payoffs(choices)\n\nChoices: [1 0]\n\n\narray([ 1., -1.])\n\n\n\nsource\n\n\n\nTwoArmedBandit.output_probs\n\n TwoArmedBandit.output_probs ()\n\nOutputs np array of probabilities associated to each option.\nInput:\n\nnone\n\nOutput:\n\nan array containing the bandits’ reward probabilities\n\n\nExample\n\n# Output bandits' probabilities\nexample.output_probs()\n\narray([0.9, 0.7])\n\n\n\nsource\n\n\n\nTwoArmedBandit.reversal_occurs\n\n TwoArmedBandit.reversal_occurs ()\n\nIntroduces a reversal in reward probabilities.\nInput:\n\nnone\n\nOutput:\n\nan array containing the bandits’ reward probabilities after reversal\n\n\nExample\n\n# Output bandits' probabilities\nprint(\"Probabilities before reversal:\", example.output_probs())\n\n# Reversal occurs\nexample.reversal_occurs()\n\n# Output bandits' new probabilities\nprint(\"Probabilities after reversal:\", example.output_probs())\n\nProbabilities before reversal: [0.9 0.7]\nProbabilities after reversal: [0.7 0.9]",
+    "crumbs": [
+      "envs",
+      "TwoArmedBandit"
+    ]
+  },
+  {
+    "objectID": "agents/simpleconf.html",
+    "href": "agents/simpleconf.html",
+    "title": "SimpleConf",
+    "section": "",
+    "text": "source",
+    "crumbs": [
+      "agents",
+      "SimpleConf"
+    ]
+  },
+  {
+    "objectID": "agents/simpleconf.html#example-agents",
+    "href": "agents/simpleconf.html#example-agents",
+    "title": "SimpleConf",
+    "section": "Example agents",
+    "text": "Example agents\nTo illustrate the methods, let’s consider 2 example agents. Both have a confirmation bias. Their parameters are the following:\n\n\n\n\n\\(\\alpha_C\\)\n\\(\\alpha_D\\)\n\\(\\beta\\)\n\n\n\n\nagent 1\n\\(0.2\\)\n\\(0.1\\)\n\\(5.\\)\n\n\nagent 2\n\\(0.15\\)\n\\(0.05\\)\n\\(4.\\)\n\n\n\n\n\\(\\alpha_C\\): confirmatory learning rate\n\\(\\alpha_D\\): disconfirmatory learning rate\n\\(\\beta\\): inverse temperature\n\n\n# Define example agents\nparams = np.array([[0.2, 0.1, 5.],  # agent 1's params\n                   [0.15, 0.05, 4.]])  # agent 2's params\n\nexample = SimpleConf(params)",
+    "crumbs": [
+      "agents",
+      "SimpleConf"
+    ]
+  },
+  {
+    "objectID": "agents/simpleconf.html#simpleconf-methods",
+    "href": "agents/simpleconf.html#simpleconf-methods",
+    "title": "SimpleConf",
+    "section": "SimpleConf methods",
+    "text": "SimpleConf methods\n\nsource\n\nSimpleConf.connect_agents_full\n\n SimpleConf.connect_agents_full ()\n\nConnects agents according to a fully connected graph.\nInput:\n\nNone\n\nOutput:\n\nFully connected, non-directed “attention graph”: each agent pays attention to all others.\n\n\nExample\n\n# Connecting example agents\nG = example.connect_agents_full()\n\n# Draw graph\nplt.figure(figsize=(2.5, 1.5))\nnx.draw(G)\nplt.show()\n\n\n\n\n\n\n\n\n\nsource\n\n\n\nSimpleConf.compute_softmax\n\n SimpleConf.compute_softmax (Qtable)\n\nReturns a probability table for all agents for all actions, from agents’ Qtable.\nInput: * Qtable: Q-table, 2d-array: number of agents \\(\\times\\) number of options\n\n\n\n\noption 1\noption 2\n\n\n\n\nagent 1\n\\(Q_{1,1}\\)\n\\(Q_{1,2}\\)\n\n\nagent 2\n\\(Q_{2,1}\\)\n\\(Q_{2,2}\\)\n\n\n\nOutput: * Ptable: P-table, 2d-array: number of agents \\(\\times\\) number of options\n\n\n\n\noption 1\noption 2\n\n\n\n\nagent 1\n\\(P_{1,1}\\)\n\\(P_{1,2}\\)\n\n\nagent 2\n\\(P_{2,1}\\)\n\\(P_{2,2}\\)\n\n\n\n\nSoftmax policy\nProbability that agent \\(i\\) chooses option \\(j\\) given Q-values \\(Q_{i,k}\\), for \\(k\\) any available option:\n\\[ P_{i,j} = \\frac{exp(\\beta_{i} Q_{i,j})}{\\sum_{k} exp(\\beta_{i} Q_{i,k})} \\]\nwith \\(\\beta_{i}\\) agent \\(i\\)’s inverse temperature.\n\n\nExample\nWith 2 agents, 2 options, all Qs are 0.\n\nQtable = np.zeros((2, 2))\nPtable = example.compute_softmax(Qtable)\nPtable\n\narray([[0.5, 0.5],\n       [0.5, 0.5]])\n\n\n\nsource\n\n\n\nSimpleConf.choose\n\n SimpleConf.choose (Ptable)\n\nComputes chosen options from agents’s probability table.\nInput:\n\nPtable: P-table, 2d-array: number of agents \\(\\times\\) number of options\n\n\n\n\n\noption 1\noption 2\n\n\n\n\nagent 1\n\\(P_{1,1}\\)\n\\(P_{1,2}\\)\n\n\nagent 2\n\\(P_{2,1}\\)\n\\(P_{2,2}\\)\n\n\n\nOutput:\n\nchoices: choice (i.e., chosen option) list, 1d-array: number of agents\n\n\n\n\n\nchoice\n\n\n\n\nagent 1\n\\(c_{1}\\)\n\n\nagent 2\n\\(c_{2}\\)\n\n\n\nNB: options are labelled \\(0\\) to \\(M-1\\), with \\(M\\) number of available options.\n\nExample\n\n# Compute example agents' choices according to previous Ptable\nchoices = example.choose(Ptable)\nchoices\n\narray([0, 0])\n\n\n\n# Test: given option labelling, over many simulations, average\n# choice should approach probability of choosing option 1\nchoices_test = np.zeros((2, 10000))\nfor i in range(10000):  # loop over simulations\n    choices_test[:, i] = example.choose(Ptable)\n    \nnp.mean(choices_test, axis=1)  # compute average\n\narray([0.5149, 0.5091])\n\n\n\nsource\n\n\n\nSimpleConf.all_take_action\n\n SimpleConf.all_take_action (Qtable)\n\nComputes all agents’ choices from their Qtable. Combines compute_softmax and choose.\nInput:\n\nQtable: Q-table, 2d-array: number of agents \\(\\times\\) number of options\n\n\n\n\n\noption 1\noption 2\n\n\n\n\nagent 1\n\\(Q_{1,1}\\)\n\\(Q_{1,2}\\)\n\n\nagent 2\n\\(Q_{2,1}\\)\n\\(Q_{2,2}\\)\n\n\n\nOutput:\n\nchoices: choice (i.e., chosen option) list, 1d-array: number of agents\n\n\n\n\n\nchoice\n\n\n\n\nagent 1\n\\(c_{1}\\)\n\n\nagent 2\n\\(c_{2}\\)\n\n\n\n\nExample\n\n# Compute example agents' choices according to previous Qtable\nchoices = example.all_take_action(Qtable)\nchoices\n\narray([0, 1])\n\n\n\n# Test: given option labelling, over many simulations, average\n# choice should approach probability of choosing option 1\nchoices_test = np.zeros((2, 10000))\nfor i in range(10000):  # loop over simulations\n    choices_test[:, i] = example.all_take_action(Qtable)\n    \nnp.mean(choices_test, axis=1)  # compute average\n\narray([0.509 , 0.4981])\n\n\n\nsource\n\n\n\nSimpleConf.update_Qvalues\n\n SimpleConf.update_Qvalues (G_att, choices, payoffs, Qtable)\n\nUpdates all agents’ Q-values according to CARL.\nInput:\n\nG_att: attention graph, obtained through connect_agents_full\nchoices: choice (i.e., chosen option) list, 1d-array: number of agents\n\n\n\n\n\nchoice\n\n\n\n\nagent 1\n\\(c_{1}\\)\n\n\nagent 2\n\\(c_{2}\\)\n\n\n\n\npayoffs: payoff list returned by task, 1d-array: number of agents\n\n\n\n\n\npayoff\n\n\n\n\nagent 1\n\\(r_{1}\\)\n\n\nagent 2\n\\(r_{2}\\)\n\n\n\n\nQtable: Q-table, 2d-array: number of agents \\(\\times\\) number of options\n\n\n\n\n\noption 1\noption 2\n\n\n\n\nagent 1\n\\(Q_{1,1}\\)\n\\(Q_{1,2}\\)\n\n\nagent 2\n\\(Q_{2,1}\\)\n\\(Q_{2,2}\\)\n\n\n\nOutput: * Qtable: updated Q-table, 2d-array: number of agents \\(\\times\\) number of options\n\n\n\n\noption 1\noption 2\n\n\n\n\nagent 1\n\\(Q_{1,1}\\)\n\\(Q_{1,2}\\)\n\n\nagent 2\n\\(Q_{2,1}\\)\n\\(Q_{2,2}\\)\n\n\n\nExample\n\n# Update previous Q-values given following payoffs:\npayoffs = np.array([-1, 1])  # first agent got -1, second got 1\nexample.update_Qvalues(G, choices, payoffs, Qtable)  # update Q-values\n\narray([[-0.1 ,  0.1 ],\n       [-0.15,  0.15]])",
+    "crumbs": [
+      "agents",
+      "SimpleConf"
+    ]
+  }
+]
